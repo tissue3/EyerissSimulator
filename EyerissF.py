@@ -14,6 +14,7 @@ class EyerissF:
     def Conv2d(self, Picture, FilterWeight, ImageNum, FilterNum):
 
         PictureColumnLength, FilterWeightColumnLength = self.__DataDeliver__(Picture, FilterWeight, ImageNum, FilterNum)
+        #self.__ShowStates__()
         self.__run__()
         ConvedArray = self.__PsumTransport__(PictureColumnLength, FilterWeightColumnLength)
         ReluedConvedArray = Relu(ConvedArray)
@@ -186,5 +187,5 @@ class EyerissF:
                     yy.append(0)
             xx.append(yy)
             yy = []
-        print("一共有", c, "个PE正在运行")
+        print("There are", c, "running PEs.")
         print(np.array(xx))

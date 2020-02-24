@@ -19,22 +19,16 @@ for f in files:
     image = pad(image,((2,2),(2,2)), 'median')
     pics = [image.astype(int)]
     
-    flts = np.load("filter/convnet.c1.weight.npy")
+    flts = [np.load("ConvLayerFilter1/ConvLayer1Filter"+str(x)+".npy") for x in range(1,7)]
 
-    pics= hive.Conv2d(pics,flts,1,6)
+    pics=hive.Conv2d(pics,flts,1,6)
     pics = hive.Relu(pics)
     pics=hive.Pooling(hive.Decompress(pics),255)
 
-    r = hive.Conv2d(pics, np.load("filter/convnet.c3.weight.npy"),6, 16)
-    pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
+    r = [hive.Conv2d(pics, [np.load("ConvLayerFilter1/ConvLayer2Filter" + str(x) + ".npy")],6, 1) for x in range(1, 17)]
+    pics = [Extension.NumpyAddExtension(hive.Decompress(r[x])) for x in range(16)]
     pics = hive.Relu(pics)
     pics=hive.Pooling(pics,255)
-    
-    
-    r = hive.Conv2d(pics, np.load("filter/convnet.c3.weight" + str(x) + ".npy"),16, 120) 
-    pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
-    pics = hive.Relu(pics)
-
 
     vector = hive.FullConnect(np.array(pics).flatten(),np.load('FullConnectLayer1/FullConnectLayer1.npy'),255)
     pics = hive.Relu(pics)

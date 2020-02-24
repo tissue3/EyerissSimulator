@@ -139,7 +139,9 @@ class Hive():
             l.clear()
         Picture = np.array(line)
         self.__SetPicAndFlt__(Picture, FilterWeights[0])
-
+    def __ChannelAccumulation__(self, Pictures, FilterWeights):
+        #TODO: do the channel logical mapping and the reverse
+        self.__SetPicAndFlt__(Picture, FilterWeights)
     def __SetPhysicalMapping__(self, mapping):
         self.mapping = mapping
 

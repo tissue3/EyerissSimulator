@@ -1,2 +1,2 @@
 python3 filterReset.py
-python3 lenet5_Hive.py 
+python3 Lenet5_Hive.py 

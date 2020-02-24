@@ -5,15 +5,17 @@ def Compress(NpArray, RateNeed=0):
     if NpArray.ndim == 1:
         Row = NpArray.shape
         Column = 1
-    else:
-        Row, Column = NpArray.shape
-    ComedNpArray = np.array([Row, Column], dtype=int)
+    #elif (NpArray.shape) == 2:
+    Row, Column = NpArray.shape
+    #else:
+    ComedNpArray = np.array([Row, Column])
     # NpArray=NpArray.flatten()
     NpArray = NpArray.reshape((1, Row * Column))
     ZeroCounter = 0
     for iterr in range(NpArray.size):
         if NpArray[0][iterr] == 0:
             ZeroCounter = ZeroCounter + 1
+        #TODO: check zerocounter is not larger than 31; aslo change decompress.
         else:
             if ZeroCounter == 0:
                 ComedNpArray = np.append(ComedNpArray, np.array(NpArray[0, iterr]))
@@ -26,7 +28,7 @@ def Compress(NpArray, RateNeed=0):
     if RateNeed == 0:
         return ComedNpArray
     else:
-        CompressRate = float(ComedNpArray.size) / (Row * Column)
+        CompressRate = float(ComedNpArray.size)/3 / (Row * Column)/4
         print("CompressRate is :",CompressRate)
         return ComedNpArray
 
