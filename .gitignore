@@ -2,7 +2,7 @@
 .DS_Store
 .AppleDouble
 .LSOverride
-
+*.pyc
 # Icon must end with two \r
 Icon
 
