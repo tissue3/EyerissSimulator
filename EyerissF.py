@@ -4,7 +4,7 @@ from PE import PE
 from Activiation import Relu
 
 class EyerissF:
-    GlobalBuffer = conf.SRAMSize
+    GlobalBuffer = conf.GLB
     EyerissWidth = conf.EyerissWidth
     EyerissHeight = conf.EyerissHeight
 
@@ -99,7 +99,6 @@ class EyerissF:
 
     def __run__(self):
         # 整个系统开始计算
-
         for x in range(0, conf.EyerissHeight):
             for y in range(0, conf.EyerissWidth):
                 if self.PEArray[x][y].PEState == conf.Running:

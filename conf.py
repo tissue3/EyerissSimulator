@@ -7,9 +7,9 @@ PEBuffer = 0.5
 EyerissWidth = 14
 EyerissHeight = 12
 
-PictureLayer = 3
-MB = 1024
-DRAMSize = 1024 * MB
+IfmapSpad=12
+FilterSpad=224
+PsumSpad=24
 
 # PE State
 ClockGate = 0

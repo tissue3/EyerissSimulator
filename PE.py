@@ -9,7 +9,7 @@ class PE:
     def __init__(self):
         self.SetFilterWeight((0, 0))
         self.SetImageRow((0, 0))
-
+    
     def SetPEState(self, State):
         self.PEState = State
 
