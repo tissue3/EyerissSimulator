@@ -26,17 +26,13 @@ class Hive():
     def Conv2d(self, Pictures=0, FilterWeights=0, PictureNum=0, FilterWeightNum=0, Channels=0):
         Pictures = self.RLE.Compress(Pictures)
         FilterWeights = self.RLE.Compress(FilterWeights)
-        self.input(Pictures, FilterWeights, PictureNum, FilterWeightNum, Channels)
-        psum = [self.EyerissF.Conv2d(ps, self.n, self.p, self.q) for ps in self.Passes]
-        self.TempPsum = np.vstack(psum)
-        self.Reverse()
+        Passes = self.input(Pictures, FilterWeights, PictureNum, FilterWeightNum, Channels)
+        Psum = [self.EyerissF.Conv2d(ps, self.n, self.p, self.q) for ps in Passes]
+        self.Reverse(Psum)
         return self.Output()
             
-    def Relu(self, array):
-        if type(array) == type(list()):
-            return Activiation.ReluArray(array)
-        else:
-            return Activiation.Relu(array)
+    def ReLU(self, array):
+        return Activiation.ReLU(array)
 
     def Pooling(self, array, activation=1):
         if type(array) == type(list()):
@@ -66,17 +62,22 @@ class Hive():
         for batch in range( self.Pictures.shape[0] ):
             for ofmap in range( int(self.FilterWeights.shape[0]/self.t) ):
                 for channel in range( int(self.Pictures.shape[1]/self.r) ):
-                    ifmapWidth = self.e + self.FilterWeights.shape[3] - 1
+                    #TODO: let's assume there is no reuse of filter vertically
+                    #self.e can be smaller than actual ifmapWidth
+                    #e.g. self.e of 27 is sent out, so 14 for one and 13 for another pass
+                    #for outmapwidth of 14, filterwidth of 2, we need 14+2-1 ifmaps
+                    ifmapEachPass = self.e + self.FilterWeights.shape[2] - 1
+                    ofmapWidth = self.Pictures.shape[2] - self.FilterWeigths.shape[2] + 1
                     head = 0
-                    for e in range(0, conf.EyerissWidth, self.e):
-                    # we won't use e
-                        tail = min(self.FilterWeights.shape[2], head+ifmapWidth)
-                        PicPass = self.Pictures[batch][channel*self.r:(channel+1)*self.r][head:tail]
+                    for e in range( int(ofmapWidth/self.e) ):
+                        tail = min(conf.EyerissWidth*(e+1), head+ifmapEachPass)
+                        PicPass = self.Pictures[batch][channel*self.r:(channel+1)*self.r][
+                                     head:tail]
                         WeightPass = self.FilterWeights[ofmap*self.t:(ofmap+1)*self.t][
                                      channel*self.r:(channel+1)*self.r][head:tail]
                         Passes.append([PicPass, WeightPass])
-                        head = tail
-        self.Passes = Passes
+                        head += self.e #or conf.EyerissWidth equivalently
+        return Passes
     
     def __SetMappingParameters__(self, m=0, n=0, e=0, p=0, q=0, r=0, t=0):
         self.m = m if m!=0 else self.m
@@ -95,6 +96,7 @@ class Hive():
         assert PESetHeight <= conf.EyerissHeight
         t = int(conf.EyerissHeight/PESetHeight) # t filters
         
+        #TODO: let's assume PESetW >=PEArrayWidth for now
         if PESetWidth > conf.EyerissWidth:
             #strip-mining the 2-D convolution
             # filter height 
@@ -103,9 +105,10 @@ class Hive():
             if t%fold == 0:
                 t = int(t/fold)
                 e = PESetWidth
-        else:
+        else: 
             e = PESetWidth
-        self.__SetMappingParameters__(e=e,t=t)
+        m = self.FilterWeights.shape[0]/(self.r*self.q)
+        self.__SetMappingParameters__(m=m, e=e,t=t)
         
     def __PESetMapping__(self):
         #TODO: add reusing filter, processing n ifmaps at a time
@@ -136,11 +139,12 @@ class Hive():
     def __FmapReuse__(self):
         if self.p > 1: 
             assert self.FilterWeights.shape[0]%self.p == 0
-            s = np.array(FilterWeights.shape)
+            s = np.array(self.FilterWeights.shape)
+            s[0] /= self.p
             s[3] *= self.p
-            FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
+            FilterWeights = np.empty(s,dtype=self.FilterWeights.dtype)
             for p in range(self.p):
-                FilterWeights[:,:,:, p::self.p] = self.FilterWeights[p]
+                FilterWeights[:,:,:, p::self.p] = self.FilterWeights[p::self.p]
             
             self.__SetPicAndFlt__(FilterWeights = FilterWeights)
 
@@ -148,48 +152,70 @@ class Hive():
         if self.q > 1:
             assert self.FilterWeights.shape[1]%self.q == 0
             
-            s = np.array(Pictures.shape)
+            s = np.array(self.Pictures.shape)
+            s[1] /= self.q
             s[3] *= self.q
-            Pictures = np.empty(s,dtype=Pictures.dtype)
+            Pictures = np.empty(s,dtype=self.Pictures.dtype)
             for q in range(self.q):
-                Pictures[:,:,:, q::self.q] = self.Pictures[:,q,:,:]
+                Pictures[:,:,:, q::self.q] = self.Pictures[:,q::self.q,:,:]
                 
             s = np.array(FilterWeights.shape)
+            s[1] /= self.q
             s[3] *= self.q
-            FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
+            FilterWeights = np.empty(s,dtype=self.FilterWeights.dtype)
             for q in range(self.q):
-                FilterWeights[:,:,:, q::self.q] = self.FilterWeights[:,q,:,:]
+                FilterWeights[:,:,:, q::self.q] = self.FilterWeights[:,q::self.q,:,:]
         
             self.__SetPicAndFlt__(Picture, FilterWeights)
         
+    def AccumulateChannel(self,Psum):
+        for channel in range(int(self.Pictures.shape[1]/self.r)):
+            Passes.append
+    def Reverse(self, Psum):
+        #TODO: let's ignore send back psum to PEs for now
+        index = 0
+        ofmapWidth = self.Pictures.shape[2] - self.FilterWeigths.shape[2] + 1
+        OfMaps = np.zeros( (self.Picture.shape[0], self.FilterWeights.shape[0], 
+                            ofmapWidth, ofmapWidth*self.n*self.p ))
+        for batch in range( self.Pictures.shape[0] ):
+            ofMap = []
+            for ofmap in range( int(self.FilterWeights.shape[0]/self.t) ):
+                SumRow = []
+                for channel in range( int(self.Pictures.shape[1]/self.r) ): 
+                    head = 0
+                    PsumRow = []
+                    for e in range( int(ofmapWidth/self.e) ):
+                        PsumRow.append( np.array(Psum[i]) )
+                        index += 1
+                    PsumRow = np.concatenate(PsumRow, axis=1)
+                    assert PsumRow.shape == (self.t,ofmapWidth, 
+                           ofmapWidth*self.n*self.p)
+                    SumRow.append(PsumRow)
+                SumRow = np.array(SumRow).sum(axis=0)
+                ofMap.append(SumRow)
+            OfMaps[batch] = np.concatenate(ofMap)
+        self.__SetOfMaps__(OfMaps)
+        self.__ReverseFmapReuse__()
+        self.__ReverseFilterReuse__()
+        
 
-    def Reverse(self):
-        Psum = self.TempPsum
-        if self.PictureNum == 1 and self.FilterWeightNum == 1:
-            self.__SetReturnImgs__(Psum)
-        if self.PictureNum == 1:
-            self.__ReverseFmapReuse__(Psum, self.FilterWeightNum)
-        elif self.FilterWeightNum == 1:
-            self.__ReverseFilterReuse__(Psum, self.PictureNum)
+    def __ReverseFmapReuse__(self):
+        s = np.array(self.OfMaps.shape)
+        s[1] *= self.p
+        s[3] /= self.p
+        OfMaps = np.zeros(s, dtype=self.OfMaps.dtype)
+        for n in range(len(self.n)):
+            OfMaps[n::self.n] = self.OfMaps[:,:,:,n::self.n]
 
-    def __ReverseFmapReuse__(self, Psum, PsumNum):
-        SubMap = np.hsplit(Psum, int(np.shape(Psum)[1] / PsumNum))
-        l = []
-        m = []
-        for x in range(0, PsumNum):
-            for y in range(len(SubMap)):
-                # [np.newaxis]会使返回的向量为列向量
-                l.append(np.transpose(np.array(SubMap[y][:, x])[np.newaxis]))
-            m.append(np.hstack(l))
-            l = []
+        self.__SetOfMaps__(m)
 
-        self.__SetReturnImgs__(m)
+    def __ReverseFilterReuse__(self):
+        OfMaps = np.split(self.OfMaps, int(self.OfMaps.shape()[3] / self.n), axis=3)
+        OfMaps = np.concatenate(OfMaps, axis = 0)
+        self.__SetOfMaps__(OfMaps)
 
-    def __ReverseFilterReuse__(self, Psum, PsumNum):
-        self.__SetReturnImgs__(list(np.hsplit(Psum, PsumNum)))
-
-    def __SetReturnImgs__(self, ReturnImgs):
-        self.ReturnImgs = ReturnImgs
+    def __SetOfMaps__(self, OfMaps):
+        self.OfMaps = OfMaps
 
     def Output(self):
         #TODO: trace memory write

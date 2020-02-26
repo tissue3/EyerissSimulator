@@ -9,15 +9,21 @@ class PE:
         self.FilterSpad=conf.FilterSpad
         self.PsumSpad=conf.PsumSpad
         self.PEState = conf.ClockGate
+        
+        self.myPsum = 0
+        self.inputPsum = 0
     
     def SetPEState(self, State):
         self.PEState = State
-
+        
     def SetFilterRow(self, FilterRow):
         self.FilterRow = FilterRow
-
     def SetImageRow(self, ImageRow):
         self.ImageRow = ImageRow
+    def SetPsumRow(self,PsumRow):
+        self.inputPsum = PsumRow
+    def getPsumRow(self):
+        return self.myPsum
 
     def SetChannelNum(self, ChannelNum):
         self.ChannelNum = ChannelNum
@@ -25,10 +31,12 @@ class PE:
         self.FilterNum = FilterNum
     def SetImageNum(self, ImageNum):
         self.ImageNum = ImageNum
-
-    def __SetPsum__(self, Psum):
-        self.Psum = Psum
-
+        
+    def __SetPsum__(self,Psum):
+        self.myPsum = Psum
+    def __Sum1d__(self)
+       return self.myPsum + self.inputPsum
+        
     def __Conv1d__(self, ImageRow, FilterRow):
         PsumRow = list()
         for x in range(0, len(ImageRow) ):
@@ -36,8 +44,7 @@ class PE:
             r = ImageRow[x:y] * FilterRow
             PsumRow.append(r.sum())
         return np.array(PsumRow)
-        return np.add.reduceat(PsumRow, np.arange(0, len(PsumRow), self.Channel))
-
+        
     def __Conv__(self):
         Image1 = self.ImageRow.reshape(-1, self.ChannelNum).T
         Filter1 = self.FilterRow.reshape(-1, self.ChannelNum).T
@@ -59,10 +66,12 @@ class PE:
             psum1.append(psum2)
          Psum = np.array(psum1).sum(axis=0)
          return Psum
-         
     def CountPsum(self):
     #TODO: communicating PE with each other
         if self.PEState == conf.ClockGate:
             self.__SetPsum__(0)
-        elif self.PEState == conf.Running:
+            self.SetPsumRow(0)
+        elif self.PEState == conf.ConvState:
             self.__SetPsum__(self.__Conv__())
+        elif self.PEState == conf.SumState:
+            self.__SetPsum__(self.__Sum__())

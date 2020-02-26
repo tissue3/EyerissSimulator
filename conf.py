@@ -13,6 +13,7 @@ PsumSpad=24
 
 # PE State
 ClockGate = 0
-Running = 1
+ConvState = 1
+SumState = 2
 
 EmptyPsum = 0

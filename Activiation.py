@@ -1,7 +1,9 @@
-def Relu(array):
+def ReLU1D(array):
     array[array < 0] = 0
     return array
 
-def ReluArray(array):
-    assert type(array) == type(list())
-    return [Relu(x)  for x in array]
+def ReLU(array):
+    if len(array.shape) > 1
+        return np.array([ReLU(x)  for x in array])
+    else:
+        return ReLU1D(array)
