@@ -11,34 +11,26 @@ class Hive():
         self.mode = mode
         self.EyerissF = EyerissF
         self.RLE = IO2.RLE(RateNeed = 0)
+        self.GLB = conf.GLB
+        #TODO: read/write communications between GLB, PEArray, individual is missing
         
         #maybe wrap it to a separate class
         self.m = 1
         self.n = 1
-        self.e = 1
         self.p = 1
         self.q = 1
+        self.e = 1
         self.r = 1
         self.t = 1
         
     def Conv2d(self, Pictures=0, FilterWeights=0, PictureNum=0, FilterWeightNum=0, Channels=0):
-        if self.mode == "auto":
-
-            # auto mode should compress data inside
-            # TODO: DRAM read
-            Pictures = self.RLE.Compress(Pictures)
-            FilterWeights = self.RLE.Compress(FilterWeights)
-            self.input(Pictures, FilterWeights, PictureNum, FilterWeightNum, Channels)
-            self.Conv2LogicalMapping()
-            self.Conv2PhysicalMapping()
-            self.mode = "manual"
-            self.Conv2d(0, 0, 0, 0)
-            self.mode = "auto"
-            self.Reverse()
-            return self.Output()
-        else:
-            self.t = [self.EyerissF.Conv2d(x, self.FilterWeight, self.PictureNum, self.FilterWeightNum) for x in self.mapping]
-            self.TempPsum = np.vstack(self.t)
+        Pictures = self.RLE.Compress(Pictures)
+        FilterWeights = self.RLE.Compress(FilterWeights)
+        self.input(Pictures, FilterWeights, PictureNum, FilterWeightNum, Channels)
+        psum = [self.EyerissF.Conv2d(ps, self.n, self.p, self.q) for ps in self.Passes]
+        self.TempPsum = np.vstack(psum)
+        self.Reverse()
+        return self.Output()
             
     def Relu(self, array):
         if type(array) == type(list()):
@@ -64,47 +56,36 @@ class Hive():
         self.FilterWeightNum = FilterWeightNum
         self.Channels = Channels
 
-    def Conv2LogicalMapping(self):
-        self.__PEArrayMapping__()
+    def Conv2DMapping(self):
         self.__PESetMapping__()
-        if self.n != 1: self.__FmapReuse__()
-        if self.p != 1: self.__FilterReuse__()
-        if self.q != 1: self.__ChannelAccumulation__()
+        self.__PEArrayMapping__()
+        self.__SetPasses__()
 
-    def Conv2PhysicalMapping(self):
-
-        FilterWeight = self.FilterWeight
-        Picture = self.Picture
-        FilterWeight = self.FilterWeight
-        x = 0
-        t = list()
-        while conf.EyerissWidth * x + conf.EyerissWidth + len(FilterWeight) - 1 < len(FilterWeight) + len(Picture) - 1:
-            P = Picture[conf.EyerissWidth * x: conf.EyerissWidth * x + conf.EyerissWidth + len(FilterWeight) - 1]
-            x = x + 1
-            t.append(P)
-
-        P = Picture[conf.EyerissWidth * x:]
-
-        # 判断逻辑矩阵的尾巴，并删除多余的图
-        if len(Picture[conf.EyerissWidth * x:]) < len(FilterWeight):
-            pass
-        else:
-            t.append(P)
-
-        self.__SetPhysicalMapping__(t)
-
-    def __SetPhysicalMapping__(self, mapping):
-        self.mapping = mapping
+    def __SetPasses__(self):
+        Passes = []
+        for batch in range( self.Pictures.shape[0] ):
+            for ofmap in range( int(self.FilterWeights.shape[0]/self.t) ):
+                for channel in range( int(self.Pictures.shape[1]/self.r) ):
+                    ifmapWidth = self.e + self.FilterWeights.shape[3] - 1
+                    head = 0
+                    for e in range(0, conf.EyerissWidth, self.e):
+                    # we won't use e
+                        tail = min(self.FilterWeights.shape[2], head+ifmapWidth)
+                        PicPass = self.Pictures[batch][channel*self.r:(channel+1)*self.r][head:tail]
+                        WeightPass = self.FilterWeights[ofmap*self.t:(ofmap+1)*self.t][
+                                     channel*self.r:(channel+1)*self.r][head:tail]
+                        Passes.append([PicPass, WeightPass])
+                        head = tail
+        self.Passes = Passes
     
     def __SetMappingParameters__(self, m=0, n=0, e=0, p=0, q=0, r=0, t=0):
         self.m = m if m!=0 else self.m
         self.n = n if n!=0 else self.n
-        self.e = e if e!=0 else self.e
         self.p = p if p!=0 else self.p
         self.q = q if q!=0 else self.q
+        self.e = e if e!=0 else self.e
         self.r = r if r!=0 else self.r
         self.t = t if t!=0 else self.t
-        
     
     def __PEArrayMapping__(self):
         #TODO: also consider stride
@@ -124,15 +105,19 @@ class Hive():
                 e = PESetWidth
         else:
             e = PESetWidth
-        self.__SetPicAndFlt__(e=e,t=t)
+        self.__SetMappingParameters__(e=e,t=t)
         
     def __PESetMapping__(self):
         #TODO: add reusing filter, processing n ifmaps at a time
-        slidingWindow = self.Pictures.shape[4]
+        slidingWindow = self.Pictures.shape[3]
         q = int(conf.IfmapSpad/(slidingWindow*self.n))
         p = min(int(conf.PsumSpad/self.n), int(conf.FilterSpad/(q*slidingWindow))
         #TODO:channel, filter number should be divisible by q, p
-        self.__SetPicAndFlt__(q=e,p=t)
+        self.__SetMappingParameters__(q=q,p=p)
+        
+        self.__FmapReuse__()
+        self.__FilterReuse__()
+        self.__ChannelAccumulation__()
         
         
     def __SetPicAndFlt__(self, Pictures=None, FilterWeights=None):
@@ -141,41 +126,41 @@ class Hive():
                       if FilterWeigths != None else self.FilterWeights
         
     def __FilterReuse__(self):
-        assert self.n != 1 and self.Pictures.shape[0]%self.n == 0
-        
-        Pictures = np.split(self.Pictures, self.n)
-        Pictures = np.concatenate(Pictures, axis = 2)
-            
-        self.__SetPicAndFlt__(Pictures=Pictures)
+        if self.n > 1:
+            assert self.Pictures.shape[0]%self.n == 0
+            Pictures = np.split(self.Pictures, self.n)
+            Pictures = np.concatenate(Pictures, axis = 3)
+                
+            self.__SetPicAndFlt__(Pictures=Pictures)
 
     def __FmapReuse__(self):
-        assert self.p != 1 and self.FilterWeights.shape[0]%self.p == 0
-        
-        s = np.array(FilterWeights.shape)
-        s[2] *= self.p
-        FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
-        for p in range(self.p):
-            FilterWeights[:,:, p::self.p,:] = self.FilterWeights[p]
-        
-        self.__SetPicAndFlt__(FilterWeights = FilterWeights)
+        if self.p > 1: 
+            assert self.FilterWeights.shape[0]%self.p == 0
+            s = np.array(FilterWeights.shape)
+            s[3] *= self.p
+            FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
+            for p in range(self.p):
+                FilterWeights[:,:,:, p::self.p] = self.FilterWeights[p]
+            
+            self.__SetPicAndFlt__(FilterWeights = FilterWeights)
 
     def __ChannelAccumulation__(self):
-        assert self.q != 1 and self.FilterWeights.shape[1]%self.q == 0
-        
-        
-        s = np.array(Pictures.shape)
-        s[2] *= self.q
-        Pictures = np.empty(s,dtype=Pictures.dtype)
-        for q in range(self.q):
-            Pictures[:,:, q::self.q,:] = self.Pictures[:,q,:,:]
+        if self.q > 1:
+            assert self.FilterWeights.shape[1]%self.q == 0
             
-        s = np.array(FilterWeights.shape)
-        s[2] *= self.q
-        FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
-        for q in range(self.q):
-            FilterWeights[:,:, q::self.q,:] = self.FilterWeights[:,q,:,:]
-    
-        self.__SetPicAndFlt__(Picture, FilterWeights)
+            s = np.array(Pictures.shape)
+            s[3] *= self.q
+            Pictures = np.empty(s,dtype=Pictures.dtype)
+            for q in range(self.q):
+                Pictures[:,:,:, q::self.q] = self.Pictures[:,q,:,:]
+                
+            s = np.array(FilterWeights.shape)
+            s[3] *= self.q
+            FilterWeights = np.empty(s,dtype=FilterWeights.dtype)
+            for q in range(self.q):
+                FilterWeights[:,:,:, q::self.q] = self.FilterWeights[:,q,:,:]
+        
+            self.__SetPicAndFlt__(Picture, FilterWeights)
         
 
     def Reverse(self):
