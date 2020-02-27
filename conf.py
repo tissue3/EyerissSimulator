@@ -1,5 +1,5 @@
 # Global Buffer
-SRAMSize = 108
+GLB = 108
 
 # Local Buffer
 PEBuffer = 0.5

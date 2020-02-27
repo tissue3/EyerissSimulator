@@ -10,15 +10,17 @@ class EyerissF:
         self.__InitPEs__()
 
     def Conv2d(self, Pass, n, p, q):
-        Picture, FilterWeight = Pass
-        PESetH, PESetW = self.__DataDeliver__(Pictures, FilterWeights, q)
+        Pictures, FilterWeights = Pass
+        PESetH, PESetW = self.__DataDeliver__(Pictures, FilterWeights, n, p, q)
         self.__ShowStates__()
         self.__run__()
-        Psums = self.__PsumTransport__(PESetH, PESetW, FilterWeights.shape[0], 
+        self.__PsumTransportLN__(PESetH, PESetW, FilterWeights.shape[0], 
+                Pictures.shape[0], p, n)
+        Psums = self.__PsumTransportGIN__(PESetH, PESetW, FilterWeights.shape[0], 
                 Pictures.shape[0], p, n)
         self.__SetALLPEsState__(conf.ClockGate)
 
-        return ReluedConvedArray
+        return Psums
 
     def __InitPEs__(self):
     
@@ -30,8 +32,8 @@ class EyerissF:
 
     def __SetALLPEsState__(self, State):
     
-        for ColumnELement in range(0, EyerissF.EyerissHeight):
-            for RowElement in range(0, EyerissF.EyerissWidth):
+        for ColumnELement in range(0, conf.EyerissHeight):
+            for RowElement in range(0, conf.EyerissWidth):
                 self.PEArray[ColumnELement][RowElement].SetPEState(State)
 
 
@@ -50,45 +52,57 @@ class EyerissF:
                     y += 1
                     for w in range(PESetW):
                         x = w % self.PEArrayWidth
+                        if w!=0 and w%self.PEArrayWidth == 0: y+=1
                         self.PEArray[y][x].SetFilterRow(FilterWeights[f][c][h])
                         self.PEArray[y][x].SetImageRow(Pictures[c][h+w])
                         self.PEArray[y][x].SetChannelNum(q)
                         self.PEArray[y][x].SetFilterNum(p)
                         self.PEArray[y][x].SetImageNum(n)
                         self.PEArray[y][x].SetPEState(conf.ConvState)
-                    
+        return PESetH, PESetW             
 
     def __run__(self):
         for y in range(0, conf.EyerissHeight):
             for x in range(0, conf.EyerissWidth):
                 if self.PEArray[y][x].PEState != conf.ClockGate:
                     self.PEArray[y][x].CountPsum()
-
-    def __PsumTransport__(self, PESetH, PESetW, ChannelNum, FilterNum, p, n):
-        Psums = np.zeros((FilterNum, PESetH, PESetW,p*n*PESetW))
+    def __PsumTransportLN__(self, PESetH, PESetW, ChannelNum, FilterNum, p, n):
         for f in range(FilterNum):
             for c in range(ChannelNum):
-                for h in range(PESetH):
+                for h in range(PESetH - 1):
                     for w in range(PESetW):
                         y = (f*FilterNum+c)*ChannelNum+h
                         x = w % self.PEArrayWidth
-                        Psum = 0
-                        if c!= ChannelNum-1:
-                            Psum = self.PEArray[y][x].getPSum()
-                            assert len(Psum) == PESetW*p*n
-                            Psums[f][h][w] = Psum
-                        y = (f*FilterNum+c+1)*ChannelNum+h
-                        if c!= 0:
-                            assert Psum != 0
-                            self.PEArray[y][x].setPSumRow(PSum)
-                            self.PEArray[y][x].CountPsum()
+                        Psum = self.PEArray[y][x].getPsumRow()
+                        assert len(Psum) == PESetW*p*n
+                        #transport to another weight row
+                        y = (f*FilterNum+c)*ChannelNum+h+1
+                        self.PEArray[y][x].SetInPsumRow(Psum)
                         self.PEArray[y][x].SetPEState(conf.SumState)
+                        self.PEArray[y][x].CountPsum()
+        
+    def __PsumTransportGIN__(self, PESetH, PESetW, ChannelNum, FilterNum, p, n):
+        Psums = np.zeros((FilterNum, PESetW,p*n*PESetW))
+        for f in range(FilterNum):
+            for c in range(ChannelNum):
+                for w in range(PESetW):
+                    y = (f*FilterNum+c)*ChannelNum+PESetH
+                    x = w % self.PEArrayWidth
+                    Psum = self.PEArray[y][x].getPsumRow()
+                    assert len(Psum) == PESetW*p*n
+                    if c!=ChannelNum-1:
+                    #transport to another channel
+                        y = (f*FilterNum+c+1)*ChannelNum+h
+                        self.PEArray[y][x].SetInPsumRow(Psum)
+                        self.PEArray[y][x].SetPEState(conf.SumState)
+                        self.PEArray[y][x].CountPsum()
+                    if c==ChannelNum-1: Psums[f][w] = Psum
         return Psums
 
     def __ShowPEState__(self, x, y):
         print("PE is : ", x, ",", y)
 
-        if self.PEArray[x][y].PEState == conf.Running:
+        if self.PEArray[x][y].PEState != conf.ClockGate:
             print("PEState : Running")
 
         else:
@@ -104,7 +118,7 @@ class EyerissF:
         for x in range(conf.EyerissHeight):
             for y in range(conf.EyerissWidth):
                 self.__ShowPEState__(x, y)
-                if self.PEArray[x][y].PEState == conf.Running:
+                if self.PEArray[x][y].PEState != conf.ClockGate:
                     yy.append(1)
                 else:
                     yy.append(0)
@@ -121,7 +135,7 @@ class EyerissF:
         for x in range(conf.EyerissHeight):
             for y in range(conf.EyerissWidth):
 
-                if self.PEArray[x][y].PEState == conf.Running:
+                if self.PEArray[x][y].PEState != conf.ClockGate:
                     self.__ShowPEState__(x, y)
                     c = c + 1
                     yy.append(1)
@@ -139,7 +153,7 @@ class EyerissF:
         for x in range(conf.EyerissHeight):
             for y in range(conf.EyerissWidth):
 
-                if self.PEArray[x][y].PEState == conf.Running:
+                if self.PEArray[x][y].PEState != conf.ClockGate:
                     c = c + 1
                     yy.append(1)
                 else:

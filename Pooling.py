@@ -1,10 +1,13 @@
 import numpy as np
 
 def Pooling(array,activation):
-    assert type(array) == type(list())
-    return [MAXPooling(x,activation) for x in array]
+    if len(array.shape) > 2:
+        return np.array([Pooling(x, activation)  for x in array])
+    return MAXPooling(array,activation)
+
 
 def MAXPooling(Array,activation=1, ksize=2):
+    print(Array.shape)
     assert len(Array) % ksize == 0
 
     V2list = np.vsplit(Array, len(Array) / ksize)

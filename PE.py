@@ -20,7 +20,7 @@ class PE:
         self.FilterRow = FilterRow
     def SetImageRow(self, ImageRow):
         self.ImageRow = ImageRow
-    def SetPsumRow(self,PsumRow):
+    def SetInPsumRow(self,PsumRow):
         self.inputPsum = PsumRow
     def getPsumRow(self):
         return self.myPsum
@@ -34,12 +34,12 @@ class PE:
         
     def __SetPsum__(self,Psum):
         self.myPsum = Psum
-    def __Sum1d__(self)
+    def __Sum__(self):
        return self.myPsum + self.inputPsum
         
-    def __Conv1d__(self, ImageRow, FilterRow):
+    def __Conv1D__(self, ImageRow, FilterRow):
         PsumRow = list()
-        for x in range(0, len(ImageRow) ):
+        for x in range(len(ImageRow) - len(FilterRow) + 1):
             y = x + len(FilterRow)
             r = ImageRow[x:y] * FilterRow
             PsumRow.append(r.sum())
@@ -51,21 +51,22 @@ class PE:
         psum1 = []
         for c in range(self.ChannelNum):
             Image2 = Image1[c]
-            Filter2 = Filter1[c].reshape(-1, self.ImageNum).T
+            Filter2 = Filter1[c].reshape(-1, self.FilterNum).T
             psum2 = []
-            for i in range(self.ImageNum):
-                Image3 = np.array(np.split(Image2, self.FilterNum))
+            for i in range(self.FilterNum):
+                Image3 = np.array(np.split(Image2, self.ImageNum))
                 Filter3 = Filter2[i]
                 psum3 = []
-                for f in range(self.FilterNum):
-                    psum = self.__Conv1d__(Image3[f], Filter3)
+                for f in range(self.ImageNum):
+                    psum = self.__Conv1D__(Image3[f], Filter3)
                     psum3.append(psum)
                 psum3 = np.concatenate(psum3)
                 psum2.append(psum3)
             psum2 = np.array(psum2).T.reshape(-1)
             psum1.append(psum2)
-         Psum = np.array(psum1).sum(axis=0)
-         return Psum
+        Psum = np.array(psum1).sum(axis=0)
+        return Psum
+         
     def CountPsum(self):
     #TODO: communicating PE with each other
         if self.PEState == conf.ClockGate:

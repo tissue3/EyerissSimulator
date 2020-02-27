@@ -1,12 +1,12 @@
 import numpy as np
 
 
-class RLE():
+class RLC():
     
     def __init__(self, RateNeed = 0):
         self.RateNeed = RateNeed
         
-    def Compress2D(NpArray):
+    def Compress2D(self, NpArray):
         if NpArray.ndim == 1:
             Row = NpArray.shape
             Column = 1
@@ -20,7 +20,7 @@ class RLE():
         for iterr in range(NpArray.size):
             if NpArray[0][iterr] == 0:
                 ZeroCounter = ZeroCounter + 1
-            #TODO: check zerocounter is not larger than 31; aslo change decompress.
+            #TODO: check zerocounter is not larger than 31; also change decompress.
             else:
                 if ZeroCounter == 0:
                     ComedNpArray = np.append(ComedNpArray, np.array(NpArray[0, iterr]))
@@ -39,7 +39,8 @@ class RLE():
             print("CompressRate is :",CompressRate)
             return ComedNpArray
 
-    def Decompress2D(NpArray):
+    def Decompress2D(self, NpArray):
+        print(NpArray.shape)
         Length = NpArray.size - 2
         Row = NpArray[0]
         Column = NpArray[1]
@@ -58,14 +59,14 @@ class RLE():
         DecomedNpArray = DecomedNpArray.reshape(Row, Column)
         return DecomedNpArray
 
-    def Compress(array):
+    def Compress(self, array):
         assert len(array.shape) >= 2
         if len(array.shape) == 2:
-            return self.Compress2D(x)
+            return self.Compress2D(array)
         return np.array([self.Compress(x) for x in array])
 
-    def Decompress(array):
+    def Decompress(self, array):
         assert len(array.shape) >= 2
         if len(array.shape) == 2:
-            return self.Decompress2D(x)
+            return self.Decompress2D(array)
         return [Decompress(x) for x in array]
