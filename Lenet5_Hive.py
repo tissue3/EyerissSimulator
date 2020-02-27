@@ -17,30 +17,28 @@ for f in files:
     load_from = os.path.join(dir_name,f)
     image = io.imread(load_from, as_gray=True)
     image = pad(image,((2,2),(2,2)), 'median')
-    pics = [image.astype(int)]
+    pics = np.array(image.astype(int)).reshape(1,1,image.shape[0],-1)
     
-    flts = np.load("filter/convnet.c1.weight.npy")
-
-    pics= hive.Conv2d(pics,flts,1,6)
-    pics = hive.Relu(pics)
-    pics=hive.Pooling(hive.Decompress(pics),255)
-
-    r = hive.Conv2d(pics, np.load("filter/convnet.c3.weight.npy"),6, 16)
-    pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
-    pics = hive.Relu(pics)
+    flts = np.float16(np.load("filter/convnet.c1.weight.npy"))
+    pics= hive.Conv2d(pics,flts)
+    pics = hive.ReLU(pics)
     pics=hive.Pooling(pics,255)
     
+    flts = np.float16(np.load("filter/convnet.c3.weight.npy"))
+    print(pics.shape, filts.shape)
+    r = hive.Conv2d(pics,flts)
+    #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
+    pics = hive.ReLU(pics)
+    pics=hive.Pooling(pics,255)
     
-    r = hive.Conv2d(pics, np.load("filter/convnet.c3.weight" + str(x) + ".npy"),16, 120) 
-    pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
-    pics = hive.Relu(pics)
+    flts = np.float16(np.float16(np.load("filter/convnet.c3.weight.npy")))
+    r = hive.Conv2d(pics, flts) 
+    #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
+    pics = hive.ReLU(r)
 
 
-    vector = hive.FullConnect(np.array(pics).flatten(),np.load('FullConnectLayer1/FullConnectLayer1.npy'),255)
-    pics = hive.Relu(pics)
+    vector = hive.FullConnect(vector, np.load('filter/fc.f6.weight.npy'))
 
-    vector = hive.FullConnect(vector, np.load('FullConnectLayer1/FullConnectLayer2.npy'))
-
-    vector = hive.FullConnect(vector, np.load('FullConnectLayer1/FullConnectLayer3.npy'))
+    vector = hive.FullConnect(vector, np.load('filter/fc.f7.weight.npy'))
 
     print("this number is : ",vector.argmax())
