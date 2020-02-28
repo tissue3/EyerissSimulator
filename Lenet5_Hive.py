@@ -21,24 +21,37 @@ for f in files:
     
     flts = np.float16(np.load("filter/convnet.c1.weight.npy"))
     pics= hive.Conv2d(pics,flts)
+    pics = np.swapaxes(pics,1,3)
+    pics= pics+np.float16(np.load("filter/convnet.c1.bias.npy"))
+    pics = np.swapaxes(pics,1,3)
     pics = hive.ReLU(pics)
     pics=hive.Pooling(pics,255)
     
     flts = np.float16(np.load("filter/convnet.c3.weight.npy"))
-    print(pics.shape, filts.shape)
-    r = hive.Conv2d(pics,flts)
+    print('pic', pics.shape,'flt', flts.shape)
+    pics = hive.Conv2d(pics,flts)
+    pics = np.swapaxes(pics,1,3)
+    pics= pics+np.float16(np.load("filter/convnet.c3.bias.npy"))
+    pics = np.swapaxes(pics,1,3)
     #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
     pics = hive.ReLU(pics)
     pics=hive.Pooling(pics,255)
     
-    flts = np.float16(np.float16(np.load("filter/convnet.c3.weight.npy")))
-    r = hive.Conv2d(pics, flts) 
+    print('after pooling pic', pics.shape)
+    
+    flts = np.float16(np.float16(np.load("filter/convnet.c5.weight.npy")))
+    print('pic', pics.shape,'flt', flts.shape)
+    pics = hive.Conv2d(pics, flts) 
+    pics = np.swapaxes(pics,1,3)
+    pics= pics+np.float16(np.load("filter/convnet.c5.bias.npy"))
+    pics = np.swapaxes(pics,1,3)
     #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
-    pics = hive.ReLU(r)
+    pics = hive.ReLU(pics)
 
-
+    vector = pics.flatten()
     vector = hive.FullConnect(vector, np.load('filter/fc.f6.weight.npy'))
-
+    vector = vector+np.float16(np.load("filter/fc.f6.bias.npy"))
     vector = hive.FullConnect(vector, np.load('filter/fc.f7.weight.npy'))
+    vector = vector+np.float16(np.load("filter/fc.f7.bias.npy"))
 
     print("this number is : ",vector.argmax())
