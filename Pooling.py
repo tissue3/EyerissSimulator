@@ -7,7 +7,6 @@ def Pooling(array,activation):
 
 
 def MAXPooling(Array,activation=1, ksize=2):
-    print(Array.shape)
     assert len(Array) % ksize == 0
 
     V2list = np.vsplit(Array, len(Array) / ksize)

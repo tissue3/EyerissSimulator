@@ -12,7 +12,7 @@ class EyerissF:
     def Conv2d(self, Pass, n, p, q):
         Pictures, FilterWeights = Pass
         PESetH, PESetW = self.__DataDeliver__(Pictures, FilterWeights, n, p, q)
-        self.__ShowStates__()
+        #self.__ShowStates__()
         self.__run__()
         self.__PsumTransportLN__(PESetH, PESetW, FilterWeights.shape[0], 
                 Pictures.shape[0], p, n)
@@ -23,7 +23,6 @@ class EyerissF:
         return Psums
 
     def __InitPEs__(self):
-    
         self.PEArray = list()
         for x in range(0, self.PEArrayHeight):
             self.PEArray.append(list())
@@ -31,7 +30,6 @@ class EyerissF:
                 self.PEArray[x].append(PE())
 
     def __SetALLPEsState__(self, State):
-    
         for ColumnELement in range(0, conf.EyerissHeight):
             for RowElement in range(0, conf.EyerissWidth):
                 self.PEArray[ColumnELement][RowElement].SetPEState(State)
@@ -66,7 +64,8 @@ class EyerissF:
             for x in range(0, conf.EyerissWidth):
                 if self.PEArray[y][x].PEState != conf.ClockGate:
                     self.PEArray[y][x].CountPsum()
-    def __PsumTransportLN__(self, PESetH, PESetW, ChannelNum, FilterNum, p, n):
+                    
+    def __PsumTransportLN__(self, PESetH, PESetW, FilterNum, ChannelNum, p, n):
         for f in range(FilterNum):
             for c in range(ChannelNum):
                 for h in range(PESetH - 1):
@@ -81,7 +80,7 @@ class EyerissF:
                         self.PEArray[y][x].SetPEState(conf.SumState)
                         self.PEArray[y][x].CountPsum()
         
-    def __PsumTransportGIN__(self, PESetH, PESetW, ChannelNum, FilterNum, p, n):
+    def __PsumTransportGIN__(self, PESetH, PESetW, FilterNum, ChannelNum, p, n):
         Psums = np.zeros((FilterNum, PESetW,p*n*PESetW))
         for f in range(FilterNum):
             for c in range(ChannelNum):
@@ -92,7 +91,7 @@ class EyerissF:
                     assert len(Psum) == PESetW*p*n
                     if c!=ChannelNum-1:
                     #transport to another channel
-                        y = (f*FilterNum+c+1)*ChannelNum+h
+                        y = (f*FilterNum+c+1)*ChannelNum+PESetH
                         self.PEArray[y][x].SetInPsumRow(Psum)
                         self.PEArray[y][x].SetPEState(conf.SumState)
                         self.PEArray[y][x].CountPsum()
