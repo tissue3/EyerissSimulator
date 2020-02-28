@@ -5,9 +5,16 @@ import Extension
 import skimage.io as io
 from skimage.util import pad
 import os
+from model.lenet import LeNet5
+import torch
+net = LeNet5()
 
-
-dir_name = "mnist_png/mnist_png/training/2"
+for i, (name, param) in enumerate(net.named_parameters()):
+    print(name)
+    data = np.load("filter/"+name+".npy")
+    param.data = torch.from_numpy(data)
+net.eval()
+dir_name = "mnist_png/mnist_png/training/5"
 #dir_name = "mnist_png/mnist_png/one_pic"
 files = os.listdir(dir_name)
 
@@ -18,9 +25,16 @@ for f in files:
     image = io.imread(load_from, as_gray=True)
     image = pad(image,((2,2),(2,2)), 'median')
     pics = np.array(image.astype(int)).reshape(1,1,image.shape[0],-1)
+    inputs=torch.tensor(pics,dtype=torch.float32)
+
+    print(net.convnet[0](inputs))
     
-    flts = np.float16(np.load("filter/convnet.c1.weight.npy"))
+    
+    flts = np.load("filter/convnet.c1.weight.npy")
     pics= hive.Conv2d(pics,flts)
+    
+    print(pics)
+    
     pics = np.swapaxes(pics,1,3)
     pics= pics+np.float16(np.load("filter/convnet.c1.bias.npy"))
     pics = np.swapaxes(pics,1,3)
@@ -54,4 +68,5 @@ for f in files:
     vector = hive.FullConnect(vector, np.load('filter/fc.f7.weight.npy'))
     vector = vector+np.float16(np.load("filter/fc.f7.bias.npy"))
 
-    print("this number is : ",vector.argmax())
+    print("this number is : ",vector.argmax()+1)
+    break
