@@ -1,0 +1,8 @@
+convnet.c1.weight
+convnet.c3.weight
+convnet.c5.weight
+fc.f6.weight
+fc.f6.bias
+fc.f7.weight
+fc.f7.bias
+torch.Size([1, 6, 28, 28])

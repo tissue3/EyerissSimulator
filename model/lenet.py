@@ -20,13 +20,13 @@ class LeNet5(nn.Module):
         super(LeNet5, self).__init__()
 
         self.convnet = nn.Sequential(OrderedDict([
-            ('c1', nn.Conv2d(1, 6, kernel_size=(5, 5))),
+            ('c1', nn.Conv2d(1, 6, kernel_size=(5, 5), bias=False)),
             ('relu1', nn.ReLU()),
             ('s2', nn.MaxPool2d(kernel_size=(2, 2), stride=2)),
-            ('c3', nn.Conv2d(6, 16, kernel_size=(5, 5))),
+            ('c3', nn.Conv2d(6, 16, kernel_size=(5, 5), bias=False)),
             ('relu3', nn.ReLU()),
             ('s4', nn.MaxPool2d(kernel_size=(2, 2), stride=2)),
-            ('c5', nn.Conv2d(16, 120, kernel_size=(5, 5))),
+            ('c5', nn.Conv2d(16, 120, kernel_size=(5, 5), bias=False)),
             ('relu5', nn.ReLU())
         ]))
 

@@ -3,6 +3,8 @@ import numpy as np
 def Pooling(array,activation):
     if len(array.shape) > 2:
         return np.array([Pooling(x, activation)  for x in array])
+    print('input',array)
+    print('output', MAXPooling(array,activation))
     return MAXPooling(array,activation)
 
 

@@ -27,7 +27,8 @@ class Hive():
         #Pictures = self.RLE.Compress(Pictures)
         #FilterWeights = self.RLE.Compress(FilterWeights)
         Passes = self.input(Pictures, FilterWeights)
-        Psum = [self.EyerissF.Conv2d(ps, self.n, self.p, self.q) for ps in Passes]
+        ofmapWidth = Pictures.shape[2] - FilterWeights.shape[2] + 1
+        Psum = [self.EyerissF.Conv2d(ps, ofmapWidth, self.n, self.p, self.q) for ps in Passes]
         self.Reverse(Psum)
         return self.Output()
             
@@ -46,7 +47,7 @@ class Hive():
         
     def Conv2DMapping(self):
         self.__PEArrayMapping__()
-        self.__PESetMapping__()
+        #self.__PESetMapping__()
         return self.__SetPasses__()
 
     def __SetPasses__(self):
@@ -171,11 +172,9 @@ class Hive():
         
             self.__SetPicAndFlt__(Pictures, FilterWeights)
         
-    def AccumulateChannel(self,Psum):
-        for channel in range(int(self.Pictures.shape[1]/self.r)):
-            Passes.append
+
     def Reverse(self, Psum):
-        #TODO: let's ignore send back psum to PEs for now
+        #Psum is a list of Psums in the shape of [self.t, self.e, ofmapwidth*p*n]
         index = 0
         ofmapWidth = self.Pictures.shape[2] - self.FilterWeights.shape[2] + 1
         OfMaps = np.zeros( (self.Pictures.shape[0], self.FilterWeights.shape[0], 
@@ -194,12 +193,13 @@ class Hive():
                     assert PsumRow.shape == (self.t,ofmapWidth, 
                            ofmapWidth*self.n*self.p)
                     SumRow.append(PsumRow)
+                #TODO: let's ignore send back psum to PEs for now
                 SumRow = np.array(SumRow).sum(axis=0)
                 ofMap.append(SumRow)
             OfMaps[batch] = np.concatenate(ofMap)
         self.__SetOfMaps__(OfMaps)
-        self.__ReverseFmapReuse__()
-        self.__ReverseFilterReuse__()
+        #self.__ReverseFmapReuse__()
+        #self.__ReverseFilterReuse__()
         
 
     def __ReverseFmapReuse__(self):

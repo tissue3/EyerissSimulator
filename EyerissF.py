@@ -9,15 +9,15 @@ class EyerissF:
         self.PEArrayWidth = conf.EyerissWidth
         self.__InitPEs__()
 
-    def Conv2d(self, Pass, n, p, q):
+    def Conv2d(self, Pass, OfMapWidth, n, p, q):
         Pictures, FilterWeights = Pass
-        PESetH, PESetW = self.__DataDeliver__(Pictures, FilterWeights, n, p, q)
+        PESetH, PESetW, FilterNum, ChannelNum = self.__DataDeliver__(
+                        Pictures, FilterWeights, n, p, q)
         #self.__ShowStates__()
         self.__run__()
-        self.__PsumTransportLN__(PESetH, PESetW, FilterWeights.shape[0], 
-                Pictures.shape[0], p, n)
-        Psums = self.__PsumTransportGIN__(PESetH, PESetW, FilterWeights.shape[0], 
-                Pictures.shape[0], p, n)
+        self.__PsumTransportLN__(PESetH, PESetW, FilterNum, ChannelNum, n, p)
+        self.__PsumTransportGIN__(PESetH, PESetW, FilterNum, ChannelNum, n, p)
+        Psums = self.__DataCollect__(PESetH, PESetW, FilterNum, ChannelNum, OfMapWidth, n, p)
         self.__SetALLPEsState__(conf.ClockGate)
 
         return Psums
@@ -43,60 +43,78 @@ class EyerissF:
         #TODO: let's assume PESetW >=PEArrayWidth for now
         # because current information is not enough to describe 2D mapping
         # we might introduce more parameters (tx, ty, rx, rz) in the future.
-        y = -1
-        for f in range(FilterWeights.shape[0]):#filters
-            for c in range(Pictures.shape[0]):#channel
+        FilterNum = FilterWeights.shape[0]
+        ChannelNum = Pictures.shape[0]
+        for f in range(FilterNum):#filters
+            for c in range(ChannelNum):#channel
                 for h in range(PESetH):
-                    y += 1
                     for w in range(PESetW):
                         x = w % self.PEArrayWidth
-                        if w!=0 and w%self.PEArrayWidth == 0: y+=1
+                        offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
+                        y = offsetY+(f*FilterNum+c)*ChannelNum+h
                         self.PEArray[y][x].SetFilterRow(FilterWeights[f][c][h])
                         self.PEArray[y][x].SetImageRow(Pictures[c][h+w])
                         self.PEArray[y][x].SetChannelNum(q)
                         self.PEArray[y][x].SetFilterNum(p)
                         self.PEArray[y][x].SetImageNum(n)
                         self.PEArray[y][x].SetPEState(conf.ConvState)
-        return PESetH, PESetW             
-
+                        #self.PEArray[y][x].CountPsum()
+                        #print('individual additoin', y,x)
+                        #print(self.PEArray[y][x].myPsum)
+        return PESetH, PESetW, FilterNum, ChannelNum
+                  
+    def __DataCollect__(self, PESetH, PESetW, FilterNum, ChannelNum, OfMapWidth, n, p):
+        Psums = np.zeros( (FilterNum, PESetW, OfMapWidth*n*p) )
+        for f in range(FilterNum):#filters
+            for w in range(PESetW):
+                x = w % self.PEArrayWidth
+                offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
+                y = offsetY+(f*FilterNum+ChannelNum-1)*ChannelNum+PESetH-1
+                Psums[f][w] = self.PEArray[y][x].getPsumRow()
+        return Psums         
+        
     def __run__(self):
-        for y in range(0, conf.EyerissHeight):
-            for x in range(0, conf.EyerissWidth):
+        for y in range(self.PEArrayHeight):
+            for x in range(self.PEArrayWidth):
                 if self.PEArray[y][x].PEState != conf.ClockGate:
                     self.PEArray[y][x].CountPsum()
-                    
-    def __PsumTransportLN__(self, PESetH, PESetW, FilterNum, ChannelNum, p, n):
-        for f in range(FilterNum):
-            for c in range(ChannelNum):
-                for h in range(PESetH - 1):
-                    for w in range(PESetW):
-                        y = (f*FilterNum+c)*ChannelNum+h
-                        x = w % self.PEArrayWidth
-                        Psum = self.PEArray[y][x].getPsumRow()
-                        assert len(Psum) == PESetW*p*n
-                        #transport to another weight row
-                        y = (f*FilterNum+c)*ChannelNum+h+1
-                        self.PEArray[y][x].SetInPsumRow(Psum)
-                        self.PEArray[y][x].SetPEState(conf.SumState)
-                        self.PEArray[y][x].CountPsum()
-        
-    def __PsumTransportGIN__(self, PESetH, PESetW, FilterNum, ChannelNum, p, n):
-        Psums = np.zeros((FilterNum, PESetW,p*n*PESetW))
+
+    def __PsumTransportLN__(self, PESetH, PESetW, FilterNum, ChannelNum, n, p):
         for f in range(FilterNum):
             for c in range(ChannelNum):
                 for w in range(PESetW):
-                    y = (f*FilterNum+c)*ChannelNum+PESetH
-                    x = w % self.PEArrayWidth
-                    Psum = self.PEArray[y][x].getPsumRow()
-                    assert len(Psum) == PESetW*p*n
-                    if c!=ChannelNum-1:
-                    #transport to another channel
-                        y = (f*FilterNum+c+1)*ChannelNum+PESetH
+                    for h in range(PESetH - 1):
+                        offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
+                        y = offsetY+(f*FilterNum+c)*ChannelNum+h
+                        x = w % self.PEArrayWidth
+                        #print(y,x)
+                        Psum = self.PEArray[y][x].getPsumRow()
+                        assert len(Psum) == PESetW*p*n
+                        #transport to another weight row
+                        y += 1
                         self.PEArray[y][x].SetInPsumRow(Psum)
                         self.PEArray[y][x].SetPEState(conf.SumState)
                         self.PEArray[y][x].CountPsum()
-                    if c==ChannelNum-1: Psums[f][w] = Psum
-        return Psums
+                        #if h==PESetH-2: print('after addition', self.PEArray[y][x].getPsumRow())
+                        #print('PE addition', self.PEArray[y][x].getPsumRow())
+        
+    def __PsumTransportGIN__(self, PESetH, PESetW, FilterNum, ChannelNum, n, p):
+        for f in range(FilterNum):
+            for c in range(ChannelNum):
+                for w in range(PESetW):
+                    offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
+                    y = offsetY+(f*FilterNum+c)*ChannelNum+PESetH-1
+                    #y = (f*FilterNum+c)*ChannelNum+PESetH*(1+int(w/PESetW))-1
+                    x = w % self.PEArrayWidth
+                    Psum = self.PEArray[y][x].getPsumRow()
+                    #print(Psum)
+                    assert len(Psum) == PESetW*p*n
+                    if c!=ChannelNum-1:
+                    #transport to another channel
+                        y = offsetY+(f*FilterNum+c+1)*ChannelNum+PESetH-1
+                        self.PEArray[y][x].SetInPsumRow(Psum)
+                        self.PEArray[y][x].SetPEState(conf.SumState)
+                        self.PEArray[y][x].CountPsum()
 
     def __ShowPEState__(self, x, y):
         print("PE is : ", x, ",", y)

@@ -35,7 +35,7 @@ class PE:
     def __SetPsum__(self,Psum):
         self.myPsum = Psum
     def __Sum__(self):
-       return self.myPsum + self.inputPsum
+        return self.myPsum + self.inputPsum
         
     def __Conv1D__(self, ImageRow, FilterRow):
         PsumRow = list()
