@@ -35,8 +35,8 @@ class Hive():
     def ReLU(self, array):
         return Activiation.ReLU(array)
 
-    def Pooling(self, array, activation=1):
-        return Pooling.Pooling(array, activation)
+    def Pooling(self, array):
+        return Pooling.Pooling(array)
             
     def input(self, Pictures, FilterWeights):
         #Pictures = self.RLE.Decompress(Pictures)

@@ -1,27 +1,15 @@
 import numpy as np
+import skimage.measure
 
-def Pooling(array,activation):
+def Pooling(array):
     if len(array.shape) > 2:
-        return np.array([Pooling(x, activation)  for x in array])
-    print('input',array)
-    print('output', MAXPooling(array,activation))
-    return MAXPooling(array,activation)
+        return np.array([Pooling(x)  for x in array])
+    return MAXPooling(array)
 
 
 def MAXPooling(Array,activation=1, ksize=2):
     assert len(Array) % ksize == 0
 
-    V2list = np.vsplit(Array, len(Array) / ksize)
+    return skimage.measure.block_reduce(Array, 
+            (ksize,ksize), np.max)
 
-    VerticalElements = list()
-    HorizontalElements = list()
-
-    for x in V2list:
-        H2list = np.hsplit(x, len(x[0]) / ksize)
-        HorizontalElements.clear()
-        for y in H2list:
-            # y should be a two-two square
-            HorizontalElements.append(y.max())
-        VerticalElements.append(np.array(HorizontalElements))
-
-    return np.array(np.array(VerticalElements)/activation,dtype=int)
