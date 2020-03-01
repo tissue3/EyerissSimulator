@@ -47,7 +47,7 @@ class Hive():
         
     def Conv2DMapping(self):
         self.__PEArrayMapping__()
-        #self.__PESetMapping__()
+        self.__PESetMapping__()
         return self.__SetPasses__()
 
     def __SetPasses__(self):
@@ -198,8 +198,8 @@ class Hive():
                 ofMap.append(SumRow)
             OfMaps[batch] = np.concatenate(ofMap)
         self.__SetOfMaps__(OfMaps)
-        #self.__ReverseFmapReuse__()
-        #self.__ReverseFilterReuse__()
+        self.__ReverseFmapReuse__()
+        self.__ReverseFilterReuse__()
         
 
     def __ReverseFmapReuse__(self):

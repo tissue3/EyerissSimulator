@@ -14,7 +14,7 @@ for i, (name, param) in enumerate(net.named_parameters()):
     data = np.load("filter/"+name+".npy")
     param.data = torch.from_numpy(data)
 net.eval()
-dir_name = "mnist_png/mnist_png/training/5"
+dir_name = "mnist_png/mnist_png/training/9"
 #dir_name = "mnist_png/mnist_png/one_pic"
 files = os.listdir(dir_name)
 
@@ -39,18 +39,6 @@ for f in files:
     flts = np.float16(np.load("filter/convnet.c3.weight.npy"))
     print('pic', pics.shape,'flt', flts.shape)
     pics = hive.Conv2d(pics,flts)
-    
-    
-    res = inputs
-    for i in range(4):
-        res = net.convnet[i](res)
-    print(res.shape)
-    diff = pics-res.data.numpy()
-    for i in range(len(res[0])):
-        for j in range(len(res[0][0])):
-            if np.any(np.abs(diff[0][i][j])>10e-3): print(diff[0][i][j])
-    break
-    
     #pics = np.swapaxes(pics,1,3)
     #pics= pics+np.float16(np.load("filter/convnet.c3.bias.npy"))
     #pics = np.swapaxes(pics,1,3)
@@ -61,17 +49,30 @@ for f in files:
     
     
     
+    
     print('after pooling pic', pics.shape)
     
     flts = np.float16(np.float16(np.load("filter/convnet.c5.weight.npy")))
     print('pic', pics.shape,'flt', flts.shape)
     pics = hive.Conv2d(pics, flts) 
+    
     #pics = np.swapaxes(pics,1,3)
     #pics= pics+np.float16(np.load("filter/convnet.c5.bias.npy"))
     #pics = np.swapaxes(pics,1,3)
     #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
     pics = hive.ReLU(pics)
 
+    
+    
+    res = inputs
+    for i in range(8):
+        res = net.convnet[i](res)
+    print(res.shape)
+    diff = pics-res.data.numpy()
+    for i in range(len(res[0])):
+        for j in range(len(res[0][0])):
+            if np.any(np.abs(diff[0][i][j])>10e-4): print(diff[0][i][j])
+    #break
     
     
     vector = pics.flatten()
@@ -81,7 +82,4 @@ for f in files:
     vector = hive.FullConnect(vector, np.load('filter/fc.f7.weight.npy'))
     #vector = vector+np.float16(np.load("filter/fc.f7.bias.npy"))
 
-    #res = net.convnet(inputs)
-    print(res)
-
-    print("this number is : ",vector.argmax()+1)
+    print("this number is : ",vector.argmax())
