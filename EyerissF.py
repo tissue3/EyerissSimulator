@@ -9,11 +9,11 @@ class EyerissF:
         self.PEArrayWidth = conf.EyerissWidth
         self.__InitPEs__()
 
-    def Conv2d(self, Pass, OfMapWidth, n, p, q):
+    def Conv2d(self, Pass, OfMapWidth, n, p, q, showStates=0):
         Pictures, FilterWeights = Pass
         PESetH, PESetW, FilterNum, ChannelNum = self.__DataDeliver__(
                         Pictures, FilterWeights, n, p, q)
-        self.__ShowStates__()
+        if showStates: self.__ShowStates__()
         self.__run__()
         self.__PsumTransportLN__(PESetH, PESetW, FilterNum, ChannelNum, n, p)
         self.__PsumTransportGIN__(PESetH, PESetW, FilterNum, ChannelNum, n, p)

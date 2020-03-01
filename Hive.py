@@ -224,4 +224,4 @@ class Hive():
         #return self.Compress(self.ReturnImgs)
         return self.OfMaps
     def FullConnect(self, v1, v2, activation=1):
-        return np.array(np.dot(v2, v1) / activation, dtype=int)
+        return np.array(np.dot(v1, v2.T) / activation, dtype=int)
