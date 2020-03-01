@@ -48,7 +48,7 @@ for f in files:
     diff = pics-res.data.numpy()
     for i in range(len(res[0])):
         for j in range(len(res[0][0])):
-            if np.any(np.abs(diff[0][i][j])>10e-6): print(diff[0][i][j])
+            if np.any(np.abs(diff[0][i][j])>10e-3): print(diff[0][i][j])
     break
     
     #pics = np.swapaxes(pics,1,3)

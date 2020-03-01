@@ -193,7 +193,7 @@ class Hive():
                     assert PsumRow.shape == (self.t,ofmapWidth, 
                            ofmapWidth*self.n*self.p)
                     SumRow.append(PsumRow)
-                #TODO: let's ignore send back psum to PEs for now
+                #TODO: let's ignore sending back psum to PEs for now
                 SumRow = np.array(SumRow).sum(axis=0)
                 ofMap.append(SumRow)
             OfMaps[batch] = np.concatenate(ofMap)

@@ -51,7 +51,8 @@ class EyerissF:
                     for w in range(PESetW):
                         x = w % self.PEArrayWidth
                         offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
-                        y = offsetY+(f*FilterNum+c)*ChannelNum+h
+                        y = offsetY+(f*ChannelNum+c)*PESetH+h
+                        #print(f,h,'=>', y,x)
                         self.PEArray[y][x].SetFilterRow(FilterWeights[f][c][h])
                         self.PEArray[y][x].SetImageRow(Pictures[c][h+w])
                         self.PEArray[y][x].SetChannelNum(q)
@@ -61,6 +62,7 @@ class EyerissF:
                         #self.PEArray[y][x].CountPsum()
                         #print('individual additoin', y,x)
                         #print(self.PEArray[y][x].myPsum)
+        #print('===========================')
         return PESetH, PESetW, FilterNum, ChannelNum
                   
     def __DataCollect__(self, PESetH, PESetW, FilterNum, ChannelNum, OfMapWidth, n, p):
@@ -69,7 +71,8 @@ class EyerissF:
             for w in range(PESetW):
                 x = w % self.PEArrayWidth
                 offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
-                y = offsetY+(f*FilterNum+ChannelNum-1)*ChannelNum+PESetH-1
+                y = offsetY+(f*ChannelNum+ChannelNum-1)*PESetH+PESetH-1
+                #y = offsetY+(f*FilterNum+ChannelNum-1)*ChannelNum+PESetH-1
                 Psums[f][w] = self.PEArray[y][x].getPsumRow()
         return Psums         
         
@@ -85,7 +88,7 @@ class EyerissF:
                 for w in range(PESetW):
                     for h in range(PESetH - 1):
                         offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
-                        y = offsetY+(f*FilterNum+c)*ChannelNum+h
+                        y = offsetY+(f*ChannelNum+c)*PESetH+h
                         x = w % self.PEArrayWidth
                         #print(y,x)
                         Psum = self.PEArray[y][x].getPsumRow()
@@ -103,7 +106,8 @@ class EyerissF:
             for c in range(ChannelNum):
                 for w in range(PESetW):
                     offsetY = int(w/self.PEArrayWidth)*PESetH*ChannelNum*FilterNum
-                    y = offsetY+(f*FilterNum+c)*ChannelNum+PESetH-1
+                    y = offsetY+(f*ChannelNum+c)*PESetH+PESetH-1
+                    #y = offsetY+(f*FilterNum+c)*ChannelNum+PESetH-1
                     #y = (f*FilterNum+c)*ChannelNum+PESetH*(1+int(w/PESetW))-1
                     x = w % self.PEArrayWidth
                     Psum = self.PEArray[y][x].getPsumRow()
@@ -111,7 +115,8 @@ class EyerissF:
                     assert len(Psum) == PESetW*p*n
                     if c!=ChannelNum-1:
                     #transport to another channel
-                        y = offsetY+(f*FilterNum+c+1)*ChannelNum+PESetH-1
+                        #y = offsetY+(f*FilterNum+c+1)*ChannelNum+PESetH-1
+                        y = offsetY+(f*ChannelNum+c+1)*PESetH+PESetH-1
                         self.PEArray[y][x].SetInPsumRow(Psum)
                         self.PEArray[y][x].SetPEState(conf.SumState)
                         self.PEArray[y][x].CountPsum()
