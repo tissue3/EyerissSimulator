@@ -34,24 +34,29 @@ for f in range(0, len(files), batch_size):
     pics=np.array(pics)
     inputs=torch.tensor(pics,dtype=torch.float32)
     
-    #pics = r.Compress(pics)
+  
     flts = np.load("../filter/convnet.c1.weight.npy")
-    #flts = r.Compress(flts)
+    pics = r.Compress(pics)
+    flts = r.Compress(flts)
     pics= hive.Conv2d(pics,flts)
     
     #pics = np.swapaxes(pics,1,3)
     #pics= pics+np.float16(np.load("filter/convnet.c1.bias.npy"))
     #pics = np.swapaxes(pics,1,3)
+    pics = hive.PreProcess(pics)
     pics = hive.ReLU(pics)
     pics=hive.Pooling(pics)
     
     flts = np.float16(np.load("../filter/convnet.c3.weight.npy"))
-    print('pic', pics.shape,'flt', flts.shape)
+    flts = r.Compress(flts)
+    pics = r.Compress(pics)
+    #print('pic', pics.shape,'flt', flts.shape)
     pics = hive.Conv2d(pics,flts)
     #pics = np.swapaxes(pics,1,3)
     #pics= pics+np.float16(np.load("filter/convnet.c3.bias.npy"))
     #pics = np.swapaxes(pics,1,3)
     #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
+    pics = hive.PreProcess(pics)
     pics = hive.ReLU(pics)
     pics=hive.Pooling(pics)
     
@@ -59,19 +64,21 @@ for f in range(0, len(files), batch_size):
     
     
     
-    print('after pooling pic', pics.shape)
+    #print('after pooling pic', pics.shape)
     
     flts = np.float16(np.float16(np.load("../filter/convnet.c5.weight.npy")))
-    print('pic', pics.shape,'flt', flts.shape)
+    flts = r.Compress(flts)
+    pics = r.Compress(pics)
+    #print('pic', pics.shape,'flt', flts.shape)
     pics = hive.Conv2d(pics, flts) 
     
     #pics = np.swapaxes(pics,1,3)
     #pics= pics+np.float16(np.load("filter/convnet.c5.bias.npy"))
     #pics = np.swapaxes(pics,1,3)
     #pics = Extension.NumpyAddExtension(hive.Decompress(r)) 
+    pics = hive.PreProcess(pics)
     pics = hive.ReLU(pics)
 
-    
     
     res = inputs
     for i in range(8):
