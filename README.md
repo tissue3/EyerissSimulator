@@ -28,5 +28,5 @@ If this is the first time you heard about Eyeriss, or you are not very familiar 
     * [Pre/PostProcess](src/IO2.py) ( Compress and Decompress)
 
 ### [Test](test/)
-* [LeNet5_Hive.py](test/LeNet5_Hive.py) (test LeNet5 on Mnist, output inference result)
+* [LeNet5_Hive.py](test/Lenet5_Hive.py) (test LeNet5 on Mnist, output inference result)
 * [test_IO2.py](test/test_IO2.py) (test compression and decompression)
