@@ -9,7 +9,7 @@ This repo reimplemented and reorganized all functions of EyerissF.
 
 Eyeriss is a row stationary DNN accelerator. 
 
-If this is the first time you heard about Eyeriss, or you are not very familiar with Eyeriss, the [readme](https://github.com/jneless/EyerissF/blob/master/README.md) of EyerissF(https://github.com/jneless/Eyerissf) gives a good explanation. Please refer to that.
+If this is the first time you heard about Eyeriss, or you are not very familiar with Eyeriss, the [readme](https://github.com/jneless/EyerissF/blob/master/README.md) of [EyerissF](https://github.com/jneless/Eyerissf) gives a good explanation. Please refer to that.
 
 ## File Structure
 
