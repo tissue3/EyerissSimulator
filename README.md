@@ -11,7 +11,12 @@ Eyeriss is a row stationary DNN accelerator.
 
 If this is the first time you heard about Eyeriss, or you are not very familiar with Eyeriss, the [readme](https://github.com/jneless/EyerissF/blob/master/README.md) of [EyerissF](https://github.com/jneless/Eyerissf) gives a good explanation. Please refer to that.
 
-## File Structure
+## How to Use
+Run [Lenet5_Hive.py](test/Lenet5_Hive.py), it outputs inference results of LeNet5 on Mnist dataset. The first there convolution layer are compared with pytorch implementation. 
+Please make sure you have pytorch and numpy installed.
+
+
+## Structure
 
 ### [Source](src/)
 
@@ -28,5 +33,5 @@ If this is the first time you heard about Eyeriss, or you are not very familiar 
     * [Pre/PostProcess](src/IO2.py) ( Compress and Decompress)
 
 ### [Test](test/)
-* [LeNet5_Hive.py](test/Lenet5_Hive.py) (test LeNet5 on Mnist, output inference result)
-* [test_IO2.py](test/test_IO2.py) (test compression and decompression)
+* [LeNet5 on Hive.py](test/Lenet5_Hive.py) (test LeNet5 on Mnist, output inference result)
+* [test IO2.py](test/test_IO2.py) (test compression and decompression)
