@@ -28,57 +28,5 @@ If this is the first time you heard about Eyeriss, or you are not very familiar 
     * [Pre/PostProcess](src/IO2.py) ( Compress and Decompress)
 
 ### [Test](test/)
-
-### Hive platform
-
-Hive is a new CNN platform based on Eyeriss chip or EyerissF simulator, which contains basic funxs to establish CNN.
-**(NOT "APACHE HIVE")**
-Eyeriss or EyerissF just only an ASIC chip and python-made simulator and can not achieve any tasks. In order to do pattern regonization tasks, it must have a mature platform to support standard input data.
-Hive is aiming to tranfor 3-channel jpg pics to input Eyeriss supported stream and decompress results.
-
-
-If u wanna use hive to create CNN, u should do following steps:
-
-1. init EyerissF simulator 
-```python
-ef = EyerissF()
-```
-or
-
-```python
-ef = EyerissF("manual")
-```
-
-1. init Hive
-```python
-hive = Hive(ef)
-```
-
-Other funxs from Hive
-1. convolution ( Eyeriss Supported)
-```python
-hive.conv2d(pics,filters,number of pics, number of filters)
-```
-1. Pooling
-```python
-hive.Pooling(pics)
-```
-1. FullConnect
-```python
-hive.FullConnect(vector,vector2)
-```
-
-
-## contact me
-please Email lee@frony.net or k1924116@kcl.ac.uk
-
-## REALLY IMPORTANT
-**Emergy model IS NOT finished YET**
-
-## last updated
-2019 Sep 23th
-
-## __future__
-1. changing name in case of any misunderstanding with 'Apache Hive'
-1. overriding file constructions to make basic code in src folder
-1. add new functions in energy stream calculation between different storage layers 
+* [LeNet5_Hive.py](test/LeNet5_Hive.py) (test LeNet5 on Mnist, output inference result)
+* [test_IO2.py](test/test_IO2.py) (test compression and decompression)
