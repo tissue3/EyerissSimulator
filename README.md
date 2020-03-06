@@ -33,5 +33,5 @@ Please make sure you have pytorch and numpy installed.
     * [Pre/PostProcess](src/IO2.py) ( Compress and Decompress)
 
 ### [Test](test/)
-* [LeNet5 on Hive.py](test/Lenet5_Hive.py) (test LeNet5 on Mnist, output inference result)
-* [test IO2.py](test/test_IO2.py) (test compression and decompression)
+* [LeNet5 on Hive.py](test/Lenet5_Hive) (test LeNet5 on Mnist, output inference result)
+* [test IO2.py](test/test_IO2) (test compression and decompression)
